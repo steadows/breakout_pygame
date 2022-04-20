@@ -59,7 +59,7 @@ class Block(pg.sprite.Sprite ):
 
         if hit:
             self.health = self.health - 500
-            print(self.health)
+            # print(self.health)
 
         if self.health <= 0: 
             self.kill()
@@ -254,6 +254,10 @@ class Game:
                         event = pg.event.wait()
                         if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                             break #Exit infinite loop
+
+            for event in events:
+                if event.type == pg.KEYDOWN and event.key == pg.K_n:
+                    self.addBalls( Ball())
 
             # Update updateable objects
             self.overlays.update(self.game_over)
