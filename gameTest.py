@@ -36,13 +36,8 @@ class Overlay(pg.sprite.Sprite):
     def update(self, game): 
         if game is False:
             self.image = self.font.render('Score: ' + str(Overlay.score) + '  Lives: ' + str(Overlay.lives), True, (0,0,0), None)
-            print("test")
         else:
             self.image = self.font.render('Score: ' + str(Overlay.score) + '  Lives: 0', True, (0,0,0), None)
-            print("nah")
-            
-
-
 
 class Block(pg.sprite.Sprite ):
     def __init__(self, x, y):
@@ -76,6 +71,10 @@ class Block(pg.sprite.Sprite ):
 class Ball(pg.sprite.Sprite):
 
     game_over = False
+    pg.mixer.init()
+    BLOCK_BEEP = pg.mixer.Sound("block__beep.wav") 
+    PADDLE_BEEP = pg.mixer.Sound("paddle_beep.wav")
+    MINUS_LIFE = pg.mixer.Sound("death.wav")
     
     def __init__(self):
 
@@ -135,16 +134,25 @@ class Ball(pg.sprite.Sprite):
             self.rect.y = 0
             self.velocity[1] = -self.velocity[1]
         if self.rect.y > 600:
+            if Ball.game_over is False:
+                channel = pg.mixer.find_channel()
+                channel.play(self.MINUS_LIFE)
             # 
             self.new_life()
+            
+
         
         collisions = pg.sprite.spritecollide(self, Ball.paddles, False)
         smashes = pg.sprite.spritecollide(self, Ball.blocks, False)
         
         if collisions:
+            channel = pg.mixer.find_channel()
+            channel.play(self.PADDLE_BEEP)
             self.velocity[1] = -self.velocity[1]
 
         if smashes:
+            channel = pg.mixer.find_channel()
+            channel.play(self.BLOCK_BEEP)
             self.velocity[0] = self.velocity[0]
             self.velocity[1] = -self.velocity[1] 
             Overlay.set_score() 
@@ -195,25 +203,19 @@ class Game:
         pg.init()
         self.__running = False
         pg.display.set_caption("PyGame")
-        # self.rendering = None
-        # self.textX = None
-        # self.textY = None
 
         #where we are drawing to: Width x Height
         self.screen = pg.display.set_mode( (800, 600) )
+
+        MUSIC = pg.mixer.Sound("music.mp3") 
+        channel1 = pg.mixer.find_channel()
+        channel1.play(MUSIC)
 
         self.clock = pg.time.Clock()
         self.blocks = pg.sprite.Group()
         self.balls = pg.sprite.Group()
         self.paddles = pg.sprite.Group()
         self.overlays = pg.sprite.Group()
-        # self.rendering = Overlay.get_font_render(self)
-        # self.theBlit = Overlay.update(self)
-        # Overlay()
- 
-        
-
-        
 
     def addBlocks(self):
         x = 0
@@ -231,6 +233,12 @@ class Game:
     def run(self):
         while self.__running:
             # Take events
+
+            background = pg.image.load("background.png")
+            pg.mixer.pre_init()
+            pg.mixer.init()
+            GAME_OVER = pg.mixer.Sound("game_over.wav")  
+                    
             events = pg.event.get()
             self.game_over = False
 
@@ -246,7 +254,6 @@ class Game:
                         event = pg.event.wait()
                         if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                             break #Exit infinite loop
-            
 
             # Update updateable objects
             self.overlays.update(self.game_over)
@@ -254,35 +261,27 @@ class Game:
             self.balls.update()
             self.blocks.update()
 
-            # if Ball.get_ball_status == True:
-            #     Game.setRunning(False) 
-            # Game.setRunning(True) 
-
             self.__running = True
 
             # Redraw
-            self.screen.fill( (255, 255, 255) )
-            
+            self.screen.blit(background, (0, 0)) 
             self.blocks.draw(self.screen)
             self.paddles.draw(self.screen)
             self.balls.draw(self.screen)
             self.overlays.draw(self.screen)
             
-            # self.screen.blit(self.rendering, (self.theBlit))
             self.game_over = Ball.game_done()
             
             if self.game_over is True:
                 self.overlays.update(self.game_over)
                 font = pg.font.Font(None, 70)
-                game_over_text = font.render("GAME OVER", True, (255, 0,0))
-                self.screen.blit(game_over_text, (350,225))
-                
-                # event = pg.event.wait()
-                # pg.time.delay(10000)
-                # self.__running = False
+                game_over_text = font.render("GAME OVER", True, (0, 0,0))
+                self.screen.blit(game_over_text, (250,225))
+                channel = pg.mixer.find_channel()
+                channel.play(GAME_OVER)
+
             pg.display.flip()
             self.clock.tick(60)
-
 
     def setRunning(self, running):
         self.__running = running
@@ -319,10 +318,10 @@ def main():
     Ball.paddles = game.getPaddles()
     Ball.blocks = game.getBlocks()
     Block.balls = game.getBalls()
-    # Ball.overlays = game.getOverlays()
     game.addBalls( Ball() )
     game.setRunning(True)
     game.run()
+    game.setRunning(False)
 
 if __name__ == '__main__':
     main()
