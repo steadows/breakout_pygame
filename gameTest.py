@@ -344,7 +344,7 @@ class Game:
                 game_over_text = font.render("GAME OVER", True, (0, 0,0))
                 self.screen.blit(game_over_text, (250,225))
                 GAME_OVER.play()
-                # self.setRunning(False)
+                self.setRunning(False)
 
             pg.display.flip()
             self.clock.tick(60)
